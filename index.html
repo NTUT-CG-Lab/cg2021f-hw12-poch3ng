@@ -54,9 +54,17 @@
 
     let renderer, scene, camera, controls, material, volconfig, cmtextures;
 
-    let modelPath = './data/nrrd_data/ID00423637202312137826377_gt_mask.nrrd';
+    let modelPaths = [
+        './data/nrrd_data/ID00423637202312137826377_mask.nrrd',
+        './data/nrrd_data/ID00423637202312137826377_gt_mask.nrrd'
+    ];
 
-    volconfig = {clim1: 0, clim2: 1, renderstyle: 'iso', isothreshold: 0.15, colormap: 'red'};
+    let modelPositions = [
+        {x: -(window.innerWidth / 4) - 64},
+        {x: (window.innerWidth / 4) - 64}
+    ];
+
+    volconfig = {clim1: 0, clim2: 1, renderstyle: 'iso', isothreshold: 0.15, colormap: 'gray'};
 
     init();
 
@@ -70,7 +78,8 @@
         createControl();
 
         // Load the data ...
-        loadNRRD(modelPath);
+        loadNRRD(modelPaths[0], modelPositions[0], 'orange');
+        loadNRRD(modelPaths[1], modelPositions[1], 'red');
 
         window.addEventListener('resize', onWindowResize);
     }
@@ -102,7 +111,7 @@
         controls.update();
     }
 
-    function loadNRRD(modelPath) {
+    function loadNRRD(modelPath, modelPosition, color) {
         new NRRDLoader().load(modelPath, function (volume) {
             const texture = new THREE.DataTexture3D(volume.data, volume.xLength, volume.yLength, volume.zLength);
             texture.format = THREE.RedFormat;
@@ -112,7 +121,8 @@
 
             // Colormap textures
             cmtextures = {
-                red: new THREE.TextureLoader().load('./three/examples/textures/red.png', render)
+                red: new THREE.TextureLoader().load('./three/examples/textures/red.png', render),
+                orange: new THREE.TextureLoader().load('./three/examples/textures/orange.png', render)
             };
 
             // Material
@@ -125,7 +135,7 @@
             uniforms["u_clim"].value.set(volconfig.clim1, volconfig.clim2);
             uniforms["u_renderstyle"].value = 1; // 1: ISO
             uniforms["u_renderthreshold"].value = volconfig.isothreshold; // For ISO renderstyle
-            uniforms["u_cmdata"].value = cmtextures[volconfig.colormap];
+            uniforms["u_cmdata"].value = cmtextures[color];
 
             material = new THREE.ShaderMaterial({
                 uniforms: uniforms,
@@ -139,6 +149,7 @@
             geometry.translate(volume.xLength / 2 - 0.5, volume.yLength / 2 - 0.5, volume.zLength / 2 - 0.5);
 
             const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.x = modelPosition.x
             scene.add(mesh);
 
             render();
